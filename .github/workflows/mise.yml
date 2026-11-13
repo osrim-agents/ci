@@ -1,0 +1,25 @@
+name: mise
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    # Agent projects run on the org's runners on the deploy VM. Every other
+    # repository, such as a graduated project, runs on GitHub's runners.
+    runs-on: ${{ github.repository_owner == 'osrim-agents' && fromJSON('["self-hosted", "voliere"]') || 'ubuntu-latest' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v5
+      # Each project defines its checks as the ci task in mise.toml, so it
+      # changes them without touching a workflow file.
+      - name: Run the ci task
+        run: |
+          if mise tasks info ci >/dev/null 2>&1; then
+            mise run ci
+          else
+            echo "::warning::mise.toml has no ci task, so nothing was checked."
+          fi
